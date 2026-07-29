@@ -203,10 +203,16 @@
       }
 
       #chat-box {
-        height: 500px;
+        max-height: 500px;
         display: flex;
         flex-direction: column;
         opacity: 0;
+        overflow-y: auto;
+      }
+      #chat-messages {
+        flex: 1 1 auto;
+        max-height: 400px;
+        overflow-y: auto;
       }
       #chat-messages > div:not(:first-child) {
         margin-top: 10px;
@@ -337,7 +343,8 @@
                   class="agent-message p-2 px-3"
                   style="font-size: 13px; max-width: 80%"
                 >
-                  Hi User, I'm Maya, how can I help you with your order today?
+                  Hi {{user.first_name}}, I'm Melanie, an AI bot, how can I help
+                  you with your order today?
                 </div>
               </div>
             </div>
@@ -361,6 +368,26 @@
       </div>
     </div>
     <script>
+      function scrollToLatestMessage() {
+        const messages = document.getElementById("chat-messages");
+        messages.scrollTop = messages.scrollHeight;
+      }
+      function showTyping() {
+        const messages = document.getElementById("chat-messages");
+        messages.insertAdjacentHTML(
+          "beforeend",
+          `<div id="typing-indicator" class="agent-message p-2" style="font-size: 13px; max-width=85%;">
+          Typing...
+
+
+
+        </div>`,
+        );
+        scrollToLatestMessage();
+      }
+      function hideTyping() {
+        document.getElementById("typing-indicator").remove();
+      }
       function showChat() {
         document.getElementById("help-card").style.display = "none";
         const chatBox = document.getElementById("chat-box");
@@ -377,14 +404,39 @@
         message.style.fontSize = "13px";
         message.innerText = text;
         messages.appendChild(message);
+        scrollToLatestMessage();
       }
-      function sendMessage() {
+      async function sendMessage() {
         const input = document.getElementById("chat-input");
         const message = input.value.trim();
         if (!message) return;
 
         appendMessage(message, "customer");
         input.value = "";
+
+        //send message to Django view
+        showTyping();
+        try {
+          const minDelay = new Promise((resolve) => setTimeout(resolve, 800));
+          const [response] = await Promise.all([
+            fetch("{% url 'chat' order.id %}", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+              },
+              body: JSON.stringify({ message: message }),
+            }),
+            minDelay,
+          ]);
+          const data = await response.json();
+          hideTyping();
+          appendMessage(data.Reply, "agent");
+        } catch (error) {
+          hideTyping();
+          console.error("Error:", error);
+          appendMessage("An error occurred. Please try again later.", "agent");
+        }
       }
 
       document

@@ -1,6 +1,8 @@
 from anthropic import Anthropic
 from django.conf import settings
 from .tools import get_order_details, get_refund_history, check_delivery_status
+from . models import Conversation, Message, AgentLog
+
 
 
 client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
@@ -109,3 +111,21 @@ def execute_tool(tool_name, tool_input):
 
 #AGENT LOOP --> WHILE LOOP THAT LOOPS UNTIL THE TASK IS DONE
 
+def run_support_agent(user_message, conversation_id):
+  conv = Conversation.objects.get(id=conversation_id)
+  conversation_messages = []
+
+  for msg in conv.messages.order_by("created_at"):
+    api_role = "assistant" if msg.role == "agent" else msg.role
+    conversation_messages.append({"role": api_role, "content": msg.content})
+
+  # send this conversation_messages to LLM
+  response = client.messages.create(
+    model=anthropic_model,
+    max_tokens=1024,
+    system=SUPPORT_SYSTEM_PROMPT,
+    messages=conversation_messages
+  )
+
+  final_text = response.content[0].text
+  return final_text
