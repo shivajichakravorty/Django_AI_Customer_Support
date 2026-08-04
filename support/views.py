@@ -23,14 +23,9 @@ def chat(request, order_id):
 
     #send user message and conversation to LLM
 
-    reply = run_support_agent(user_message, conversation.id)
+    reply = run_support_agent(user_message, conversation.id, order.id, request.user.id)
     Message.objects.create(conversation=conversation, role="agent", content=reply)
 
-
-
-    print("User message = ", user_message)
-    print("Reply = ", reply)
-    #time.sleep(3)
     return JsonResponse({"Reply": reply})
 
 

@@ -111,7 +111,7 @@ def execute_tool(tool_name, tool_input):
 
 #AGENT LOOP --> WHILE LOOP THAT LOOPS UNTIL THE TASK IS DONE
 
-def run_support_agent(user_message, conversation_id):
+def run_support_agent(user_message, conversation_id, order_id, user_id):
   conv = Conversation.objects.get(id=conversation_id)
   conversation_messages = []
 
@@ -120,12 +120,40 @@ def run_support_agent(user_message, conversation_id):
     conversation_messages.append({"role": api_role, "content": msg.content})
 
   # send this conversation_messages to LLM
-  response = client.messages.create(
-    model=anthropic_model,
+  while True:
+    response = client.messages.create(model=anthropic_model, 
     max_tokens=1024,
-    system=SUPPORT_SYSTEM_PROMPT,
+    system=SUPPORT_SYSTEM_PROMPT + f"\n\nContext: This conversation is about the order #{order_id}, user: {user_id}",
+    tools=SUPPORT_TOOLS,
     messages=conversation_messages
   )
+    print("Stop Reason ===>", response.stop_reason)
+    print("Content ===>", response.content)
 
-  final_text = response.content[0].text
-  return final_text
+    if response.stop_reason == 'tool_use':
+          conversation_messages.append({
+             "role": "assistant",
+             "content": response.content
+          })
+
+          tool_result = []
+          for block in response.content:
+             if block.type == 'tool_use':
+                # print("Tool call:", block.name)
+                # print("Tool input:", block.input)
+
+                #execute the tool here
+                result = execute_tool(block.name, block.input)
+                # print("Tool result:", result)
+                tool_result.append({
+                   "type": "tool_result",
+                   "tool_use_id": block.id,
+                   "content": str(result)
+                })
+
+          conversation_messages.append({
+             "role": "user",
+             "content": tool_result
+          })
+    else:
+       return response.content[0].text

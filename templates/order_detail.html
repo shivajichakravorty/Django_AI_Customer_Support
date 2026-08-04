@@ -214,7 +214,7 @@
         max-height: 400px;
         overflow-y: auto;
       }
-      #chat-messages > div:not(:first-child) {
+      #chat-messages .d-flex > div:not(:first-child) {
         margin-top: 10px;
       }
       .customer-message {
@@ -338,14 +338,42 @@
             </div>
             <!-- Chat Area -->
             <div id="chat-messages" class="card-body p-3">
-              <div class="d-flex">
+              <div class="d-flex flex-column" id="message-list">
+                {% if conversation %}
+                <!-- prettier-ignore -->
+
+                <!-- Print the previous messages -->
+                {% for message in conversation %}
+                <!-- prettier-ignore -->
+                {% if message.role == 'user'%}
+                <!-- prettier-ignore -->
+
+                <div class="customer-message p-2 px-3" style="font-size: 13px; max-width: 80%">
+                        {{ message.content }}
+                      </div>
+                <!-- prettier-ignore -->
+
+                {% else %}
                 <div
                   class="agent-message p-2 px-3"
                   style="font-size: 13px; max-width: 80%"
                 >
+                  {{ message.content }}
+                </div>
+
+                {% endif %} {% endfor %}
+                <!-- prettier-ignore -->
+
+                {% else %}
+                <!-- prettier-ignore -->
+
+                <div
+                  class="agent-message p-2 px-3"
+                  style="font-size: 13px; max-width: 80%">
                   Hi {{user.first_name}}, I'm Melanie, an AI bot, how can I help
                   you with your order today?
                 </div>
+                {% endif %}
               </div>
             </div>
             <!-- Chat Footer -->
@@ -391,11 +419,14 @@
       function showChat() {
         document.getElementById("help-card").style.display = "none";
         const chatBox = document.getElementById("chat-box");
+        const input = document.getElementById("chat-input");
         chatBox.style.opacity = 1;
         chatBox.style.display = "block";
+        input.focus();
+        scrollToLatestMessage();
       }
       function appendMessage(text, type) {
-        const messages = document.getElementById("chat-messages");
+        const messages = document.getElementById("message-list");
         const message = document.createElement("div");
         message.classList.add(
           type === "customer" ? "customer-message" : "agent-message",

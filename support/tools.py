@@ -1,4 +1,4 @@
-from datetime import timezone
+from django.utils import timezone
 from orders.models import Order, RefundRequest
 from .tracking_data import DELIVERY_DATA
 
