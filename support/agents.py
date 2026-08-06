@@ -1,6 +1,6 @@
 from anthropic import Anthropic
 from django.conf import settings
-from .tools import get_order_details, get_refund_history, check_delivery_status
+from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile
 from . models import Conversation, Message, AgentLog
 
 
@@ -157,7 +157,44 @@ SUPPORT_TOOLS = [
 
 ]
 
+MANAGER_TOOLS = [
+   {
+      "name": "assess_fraud_risk",
+      "description": "Consult the risk agent to assess fraud risk for a customer. Use this when refund request looks suspicious or customer has multiple refund requests. Pass the user ID to the agent",
+      "input_schema": {
+         "type": "object",
+         "properties": {
+           "user_id": {
+             "type": "integer",
+             "description": "The user ID to check risk profile for"
+           
+           }
+            
+      },
+      "required": ["user_id"]
+      }
 
+   }
+]
+
+
+RISK_TOOLS = [
+   {
+      "name": "get_customer_risk_profile",
+      "description": "get complete risk profile for a customer including order history, refund patterns, refund request and refund ratio. Use this to assess the fraud risk.",
+      "input_schema": {
+         "type": "object",
+         "properties": {
+            "user_id": {
+               "type": "integer",
+               "description": "The user ID to check risk profile for"   
+            }
+         },
+         "required": ["user_id"]
+
+      }      
+   }
+]
 #EXECUTE TOOL --> BRIDGE BETWEEN CLAUDE AND PYTHON FUNCTION TOOLS. 
 
 def execute_tool(tool_name, tool_input):
@@ -172,6 +209,12 @@ def execute_tool(tool_name, tool_input):
 
   if tool_name == "escalate_to_manager":
     return run_manager_agent(tool_input["case_summary"])
+
+  if tool_name == "assess_fraud_risk":
+    return run_risk_agent(tool_input["user_id"])
+
+  if tool_name == "get_customer_risk_profile":
+    return get_customer_risk_profile(tool_input["user_id"])
   
   return None
 
@@ -258,3 +301,45 @@ def run_manager_agent(case_summary):
          })
       else:
          return response.content[0].text
+
+
+def run_risk_agent(user_id):
+   risk_messages = [
+      {"role": "user", "content": f"Please assess the fraud risk for user ID {user_id}. Use your tool to get their profile and return a final response."}
+   ]
+
+   while True:
+      response = client.messages.create(model=anthropic_model,
+      max_tokens=1024,
+      system=RISK_SYSTEM_PROMPT,
+      tools=RISK_TOOLS,
+      messages=risk_messages
+      )
+
+      if response.stop_reason == 'tool_use':
+         tool_result = []
+         for block in response.content:
+            if block.type == 'tool_use':
+               print("Risk tool call:", block.name)
+               print("Risk tool input:", block.input)
+
+               #execute the tool here)
+               result = execute_tool(block.name, block.input)
+               print("Risk tool result:", result)
+
+               tool_result.append({
+                  "type": "tool_result",
+                  "tool_use_id": block.id,
+                  "content": str(result)
+               })
+
+         risk_messages.append({
+            "role": "user",
+            "content": tool_result
+         })
+      else:
+         return response.content[0].text
+
+
+         
+

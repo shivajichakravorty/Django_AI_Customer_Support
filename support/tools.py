@@ -52,3 +52,34 @@ def check_delivery_status(tracking_number, carrier=None):
   order = Order.objects.filter(tracking_number=tracking_number).first()
   result["carrier"] = order.carrier if order and order.carrier else "N/A"
   return result
+
+def get_customer_risk_profile(user_id):
+  refunds = RefundRequest.objects.filter(user_id=user_id)
+  orders = Order.objects.filter(user_id=user_id)
+
+  # Recent 90 days refund requests
+  recent_refunds = refunds.filter(created_at__gte=timezone.now() - timezone.timedelta(days=90)).count()
+
+  denied = refunds.filter(status="denied").count()
+  approved = refunds.filter(status="approved").count()
+  pending = refunds.filter(status="pending").count()
+
+  total_orders = orders.count()
+  total_refunds = refunds.count()
+
+  if total_orders > 0:
+    refund_to_order_ratio = round(total_refunds / total_orders, 2)
+  else:
+    refund_to_order_ratio = 0
+
+
+  return {
+    "user_id": user_id,
+    "refund_to_order_ratio": refund_to_order_ratio,
+    "recent_refunds": recent_refunds,
+    "denied": denied,
+    "approved": approved,
+    "pending": pending,
+    "total_orders": total_orders,
+    "total_refunds": total_refunds,
+  }
