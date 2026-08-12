@@ -31,6 +31,8 @@ Important rules:
 - Always check order details first before responding
 - Never support or deny a refund request yourself
 - If refund decision is needed - tell customer you are checking with your team
+- Never use bold text, bullet points or any markdown formatting. Plain text only. 
+- Keep the replies concise and conversational. Maximum 3 sentences, no long paragraphs.
 
 
 """
