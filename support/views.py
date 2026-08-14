@@ -1,11 +1,13 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 import json
 import time
 from orders.models import Order
 from support.agents import run_support_agent
 from .models import Conversation, Message
 from django.contrib.admin.views.decorators import staff_member_required
+from event_queue import subscribe, unsubscribe, publish, DONE
+
 
 
 
@@ -51,5 +53,23 @@ def conversation_detail(request, conversation_id):
     "agentlogs": agentlogs
   }
   return render(request, "support/conversation_detail.html", context)
+
+
+@staff_member_required
+def stream(request, conversation_id):
+  def event_stream(conversation_id):
+    q = subscribe(conversation_id)
+
+    try:
+      while True:
+        event = q.get() # wait for the next event
+
+        yield f"data: {json.dumps(event)}\n\n"
+    finally:
+      unsubscribe(conversation_id, q)
+
+        
+
+  return StreamingHttpResponse(event_stream(conversation_id), content_type = "text/event-stream")
 
 

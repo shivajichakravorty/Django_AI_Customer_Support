@@ -2,6 +2,7 @@ from anthropic import Anthropic
 from django.conf import settings
 from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile
 from . models import Conversation, Message, AgentLog
+from . event_queue import publish, DONE
 
 
 
@@ -274,8 +275,12 @@ def run_support_agent(user_message, conversation_id, order_id, user_id):
              "content": tool_result
           })
     else:
-       AgentLog.objects.create(conversation=conv, event_type="final", message=response.content[0].text)
-       return response.content[0].text
+       # Publish reply
+       final_reply = response.content[0].text
+       event = {"type": "final", "message": final_reply}
+       publish(conversation_id, event)
+       AgentLog.objects.create(conversation=conv, event_type="final", message=final_reply)
+       return final_reply
 
 
 def run_manager_agent(case_summary, conversation_id):
