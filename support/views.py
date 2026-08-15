@@ -6,7 +6,7 @@ from orders.models import Order
 from support.agents import run_support_agent
 from .models import Conversation, Message
 from django.contrib.admin.views.decorators import staff_member_required
-from event_queue import subscribe, unsubscribe, publish, DONE
+from .event_queue import subscribe, unsubscribe, publish, DONE
 
 
 
@@ -24,11 +24,18 @@ def chat(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     conversation, created = Conversation.objects.get_or_create(user=request.user, order=order)
     Message.objects.create(conversation=conversation, role="user", content=user_message)
+    event = {"type": "user", "message": user_message, "name": request.user.first_name}
+    publish(conversation.id, event)
+
 
     #send user message and conversation to LLM
 
     reply = run_support_agent(user_message, conversation.id, order.id, request.user.id)
     Message.objects.create(conversation=conversation, role="agent", content=reply)
+    event = {"type": "agent", "message": reply, "name": request.user.first_name}
+    publish(conversation.id, event)
+
+    
 
     return JsonResponse({"Reply": reply})
 
