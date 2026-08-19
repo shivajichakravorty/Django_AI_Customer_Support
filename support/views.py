@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, StreamingHttpResponse
 import json
 import time
+import queue as queue_module
 from orders.models import Order
 from support.agents import run_support_agent
 from .models import Conversation, Message
@@ -69,7 +70,11 @@ def stream(request, conversation_id):
 
     try:
       while True:
-        event = q.get() # wait for the next event
+        try:
+          event = q.get(timeout=15) # wait for the next event, but not forever
+        except queue_module.Empty:
+          yield ": keepalive\n\n" # keep the connection alive and detect dead clients
+          continue
 
         yield f"data: {json.dumps(event)}\n\n"
     finally:
