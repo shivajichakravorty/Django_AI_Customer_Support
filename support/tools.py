@@ -1,6 +1,7 @@
 from django.utils import timezone
 from orders.models import Order, RefundRequest
 from .tracking_data import DELIVERY_DATA
+from .rag import search_knowledge_base as rag_search
 
 def get_order_details(order_id):
   try:
@@ -54,6 +55,7 @@ def check_delivery_status(tracking_number, carrier=None):
   return result
 
 def get_customer_risk_profile(user_id):
+
   refunds = RefundRequest.objects.filter(user_id=user_id)
   orders = Order.objects.filter(user_id=user_id)
 
@@ -83,3 +85,9 @@ def get_customer_risk_profile(user_id):
     "total_orders": total_orders,
     "total_refunds": total_refunds,
   }
+
+
+#Wrapper function - avoiding conflict
+def search_knowledge_base(query):
+  result = rag_search(query)
+  return {"result": result}

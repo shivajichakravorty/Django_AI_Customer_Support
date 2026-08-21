@@ -1,6 +1,6 @@
 from anthropic import Anthropic
 from django.conf import settings
-from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile
+from .tools import get_order_details, get_refund_history, check_delivery_status, get_customer_risk_profile, search_knowledge_base
 from . models import Conversation, Message, AgentLog
 from . event_queue import publish, DONE
 
@@ -156,6 +156,23 @@ SUPPORT_TOOLS = [
      }
 
      
+  },
+
+  {
+     "name": "search_knowledge_base",
+     "description": "Search CoolBreeze AC company documents including refund policy, warranty policy and product FAQ. Use this when customer asks for company policies, warranty coverage, refund eligibility or any general product related queries",
+     "input_schema": {
+        "type": "object",
+        "properties": {
+           "query": {
+              "type": "string",
+              "description": "The search query to find relevant information from company documnents. Be specific with timeframes and other specific details"
+           }
+        },
+        "required": ["query"]
+
+     }
+
   }
 
 ]
@@ -218,6 +235,9 @@ def execute_tool(tool_name, tool_input, conversation_id=None):
 
   if tool_name == "get_customer_risk_profile":
     return get_customer_risk_profile(tool_input["user_id"])
+
+  if tool_name == "search_knowledge_base":
+     return search_knowledge_base(tool_input["query"])
   
   return None
 
