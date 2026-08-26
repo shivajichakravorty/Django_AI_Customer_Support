@@ -201,7 +201,7 @@ MANAGER_TOOLS = [
 RISK_TOOLS = [
    {
       "name": "get_customer_risk_profile",
-      "description": "get complete risk profile for a customer including order history, refund patterns, refund request and refund ratio. Use this to assess the fraud risk.",
+      "description": "Get complete risk profile for a customer including order history, refund patterns, refund request and refund ratio. Use this to assess the fraud risk.",
       "input_schema": {
          "type": "object",
          "properties": {

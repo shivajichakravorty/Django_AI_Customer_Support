@@ -8,6 +8,7 @@ from support.agents import run_support_agent
 from .models import Conversation, Message
 from django.contrib.admin.views.decorators import staff_member_required
 from .event_queue import subscribe, unsubscribe, publish, DONE
+from .langchain_agents import run_support_agent_langchain
 
 
 
@@ -29,9 +30,16 @@ def chat(request, order_id):
     publish(conversation.id, event)
 
 
-    #send user message and conversation to LLM
+    #Use any one of the below lines to run the support agent. The first one is the original raw support agent and the second one is the LangChain based support agent. You can switch between them by commenting/uncommenting the respective lines.
 
-    reply = run_support_agent(user_message, conversation.id, order.id, request.user.id)
+
+    #Uncomment the below line to use the original raw support agent
+    #reply = run_support_agent(user_message, conversation.id, order.id, request.user.id)
+
+    #Uncomment the below line to use the LangChain based support agent
+    reply = run_support_agent_langchain(user_message, conversation.id, order.id, request.user.id)
+
+    
     Message.objects.create(conversation=conversation, role="agent", content=reply)
     event = {"type": "agent", "message": reply, "name": request.user.first_name}
     publish(conversation.id, event)
