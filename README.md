@@ -31,6 +31,7 @@ Use code with caution.Would you like me to regenerate the entire complete markdo
 
 * **Backend Framework:** Django
 * **AI & Orchestration:** LangChain, Claude API, RAG (Retrieval-Augmented Generation)
+* **Vector Database:** ChromaDB
 * **Real-Time Delivery:** SSE (Server-Sent Events) Dashboard
 * **Database:** SQL
 * **Frontend:** JavaScript, HTML, Bootstrap
