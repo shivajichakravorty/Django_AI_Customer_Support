@@ -4,6 +4,20 @@ An AI-powered, multi-agent customer support system built with Django and LangCha
 
 **Production Deployment:** [Live Application](https://djangoaicustomersupport-production.up.railway.app/login/)
 
+### 🔑 Demo Credentials
+Use these pre-configured accounts to explore the system and test the multi-agent routing logic:
+
+| Role | Username | Password |
+| :--- | :--- | :--- |
+| **Customer Portal** | `priya` | `1234` |
+| **Customer Portal** | `rathan` | `1234` |
+| **Customer Portal** | `arjun` | `1234` |
+| **Customer Portal** | `fraud_test` | `Django@1234` |
+| **Django Admin / Dashboard** | `djangoadmin` | `1234` |
+
+*Note: The system is currently seeded with hardcoded dummy data (including sample order histories and refund requests) so you can test escalations right away.*
+Use code with caution.Would you like me to regenerate the entire complete markdown code block with these changes included, or would you like to add some specific instructions on how to trigger a manager escalation during the chat?
+
 ## 🚀 Features
 
 * **Multi-Agent Architecture:** Powered by LangChain and Claude API.
